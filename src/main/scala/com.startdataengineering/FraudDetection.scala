@@ -53,7 +53,7 @@ class FraudDetection extends KeyedProcessFunction[String, String, String]{
       prevLoginCountry.update(logEvent.locationCountry)
 
       // as soon as the account user logs in, we set a timer for 5 min for this account ID
-      // 5 * 60 * 1000L -> 1 min, time is expected in Long format
+      // 5 * 60 * 1000L -> 5 min, time is expected in Long format
       val timer = logEvent.eventTimeStamp + (5 * 60 * 1000L)
       ctx.timerService.registerProcessingTimeTimer(timer)
       timerState.update(timer)
