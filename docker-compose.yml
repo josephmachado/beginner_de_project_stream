@@ -1,0 +1,66 @@
+version: "2.1"
+services:
+  jobmanager:
+    image: flink:1.11.0-scala_2.11
+    command: "jobmanager.sh start-foreground"
+    ports:
+      - 8081:8081
+    volumes:
+      - ./conf:/opt/flink/conf
+      - flink-checkpoints-directory:/tmp/flink-checkpoints-directory
+      - /tmp/flink-savepoints-directory:/tmp/flink-savepoints-directory
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+  taskmanager:
+    image: flink:1.11.0-scala_2.11
+    depends_on:
+      - jobmanager
+    command: "taskmanager.sh start-foreground"
+    volumes:
+      - ./conf:/opt/flink/conf
+      - flink-checkpoints-directory:/tmp/flink-checkpoints-directory
+      - /tmp/flink-savepoints-directory:/tmp/flink-savepoints-directory
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+  zookeeper:
+    image: wurstmeister/zookeeper:3.4.6
+  kafka:
+    image: wurstmeister/kafka:2.12-2.2.1
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_CREATE_TOPICS: "server-logs, alerts"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    ports:
+      - 9094:9094
+  postgres:
+    image: postgres:12.2
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: "events"
+      POSTGRES_USER: "startdataengineer"
+      POSTGRES_PASSWORD: "password"
+    volumes:
+      - ./dbsetup:/docker-entrypoint-initdb.d
+  serverloggenerator:
+    build: ./
+    image: sde:1-FLINK-1.11-scala_2.11
+    command: "java -classpath /opt/frauddetection.jar:/opt/flink/lib/* com.startdataengineering.ServerLogGenerator"
+    depends_on:
+      - kafka
+  frauddetection:
+    image: sde:1-FLINK-1.11-scala_2.11
+    command: "flink run -d -p 2 /opt/frauddetection.jar"
+    depends_on:
+      - jobmanager
+      - kafka
+      - postgres
+    volumes:
+      - ./conf:/opt/flink/conf
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+volumes:
+  flink-checkpoints-directory:
