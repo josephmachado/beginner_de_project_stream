@@ -58,7 +58,7 @@ class FraudDetection extends KeyedProcessFunction[String, String, String]{
       ctx.timerService.registerProcessingTimeTimer(timer)
       timerState.update(timer)
     }
-    else if (logEvent.eventType == "log-out") {
+    if (logEvent.eventType == "log-out") {
       // reset prev login and country
       loginState.clear()
       prevLoginCountry.clear()
