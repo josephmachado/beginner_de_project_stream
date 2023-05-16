@@ -92,9 +92,11 @@ services:
 
   datagen:
     build:
-      context: .
-      dockerfile: ./container/datagen/Dockerfile
-    command: python get_clicks_purchases.py
+      context: ./container/datagen/
+    command: python /opt/datagen/gen_fake_data.py
+    volumes:
+      - ./code:/opt/datagen/code
+      - ./datagen:/opt/datagen
     container_name: datagen
     restart: on-failure
     depends_on:

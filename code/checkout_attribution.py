@@ -1,8 +1,8 @@
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.table import StreamTableEnvironment
 from dataclasses import dataclass, field
 from typing import List, Tuple
 
+from pyflink.datastream import StreamExecutionEnvironment
+from pyflink.table import StreamTableEnvironment
 
 REQUIRED_JARS = [
     "file:///opt/flink/flink-sql-connector-kafka-1.17.0.jar",
@@ -68,7 +68,10 @@ def run_checkout_attribution_job() -> None:
 
     checkout_attribution_job = stmt_set.execute()
     print(
-        f'Async Attributed checkouts sink job status: {checkout_attribution_job.get_job_client().get_job_status()}'
+        f"""
+        Async attributed checkouts sink job
+         status: {checkout_attribution_job.get_job_client().get_job_status()}
+        """
     )
 
 

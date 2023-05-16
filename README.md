@@ -2,7 +2,7 @@
 
 ## WIP
 
-Run `make re-up` 
+Run `make run` 
 
 ## Check sink
 

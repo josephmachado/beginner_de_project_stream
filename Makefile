@@ -4,18 +4,30 @@ up:
 down:
 	docker compose down
 
-gen-user-data:
-	docker exec datagen python3 gen_user_payment_data.py
-
-gen-clicks-checkouts-data:
-	docker exec datagen python3 get_clicks_purchases.py
-
-gen-data: gen-user-data gen-clicks-checkouts-data
-
-run-data-stream:
+run-checkout-attribution-job:
 	docker exec jobmanager ./bin/flink run --python ./code/checkout_attribution.py
 
 sleep:
 	sleep 20 
 
-re-up: down up sleep gen-user-data run-data-stream
+####################################################################################################################
+# Testing, auto formatting, type checks, & Lint checks
+
+format:
+	docker exec datagen python -m black -S --line-length 79 .
+
+isort:
+	docker exec datagen isort .
+
+type:
+	docker exec datagen mypy --ignore-missing-imports /opt
+
+lint: 
+	docker exec datagen flake8 /opt
+
+ci: isort format type lint
+
+####################################################################################################################
+# Run ETL
+
+run: down up sleep ci run-checkout-attribution-job

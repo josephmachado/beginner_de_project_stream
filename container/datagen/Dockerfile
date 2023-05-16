@@ -8,7 +8,8 @@ RUN pip install \
 
 WORKDIR /opt/datagen
 
-COPY ../../datagen /opt/datagen
+COPY requirements.txt /opt/datagen/
 
-# CMD [ "python" "./gen_user_payment_data.py"]
+RUN pip install --no-cache-dir -r /opt/datagen/requirements.txt
+
 CMD ["tail" "-F" "anything"]
