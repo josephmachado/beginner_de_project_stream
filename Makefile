@@ -31,3 +31,9 @@ ci: isort format type lint
 # Run ETL
 
 run: down up sleep ci run-checkout-attribution-job
+
+####################################################################################################################
+# Monitoring
+
+viz: 
+	open http://localhost:3000
