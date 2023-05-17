@@ -1,6 +1,7 @@
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import List, Tuple
 
+from jinja2 import Environment, FileSystemLoader
 from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.table import StreamTableEnvironment
 
@@ -19,6 +20,45 @@ class StreamJobConfig:
     checkpoint_pause: int = 5
     checkpoint_timeout: int = 5
     parallelism: int = 2
+
+
+@dataclass(frozen=True)
+class KafkaConfig:
+    connector: str = 'kafka'
+    bootstrap_servers: str = 'kafka:9092'
+    scan_stratup_mode: str = 'earliest-offset'
+    consumer_group_id: str = 'flink-consumer-group-1'
+
+
+@dataclass(frozen=True)
+class ClickTopicConfig(KafkaConfig):
+    topic: str = 'clicks'
+    format: str = 'json'
+
+
+@dataclass(frozen=True)
+class CheckoutTopicConfig(KafkaConfig):
+    topic: str = 'checkouts'
+    format: str = 'json'
+
+
+@dataclass(frozen=True)
+class ApplicationDatabaseConfig:
+    connector: str = 'jdbc'
+    url: str = 'jdbc:postgresql://postgres:5432/postgres'
+    username: str = 'postgres'
+    password: str = 'postgres'
+    driver: str = 'org.postgresql.Driver'
+
+
+@dataclass(frozen=True)
+class ApplicationUsersTableConfig(ApplicationDatabaseConfig):
+    table_name: str = 'commerce.users'
+
+
+@dataclass(frozen=True)
+class ApplicationAttributedCheckoutsTableConfig(ApplicationDatabaseConfig):
+    table_name: str = 'commerce.attributed_checkouts'
 
 
 def get_execution_environment(
@@ -45,26 +85,39 @@ def get_execution_environment(
     return s_env, t_env
 
 
-def get_ddl(entity: str, type: str = 'source') -> str:
-    with open(f'./code/{type}/{entity}.sql', 'r') as file:
-        sql_qry = file.read()
-    return sql_qry
+def get_sql_query(
+    entity: str,
+    type: str = 'source',
+    template_env: Environment = Environment(loader=FileSystemLoader("code/")),
+) -> str:
+    config_map = {
+        'clicks': ClickTopicConfig(),
+        'checkouts': CheckoutTopicConfig(),
+        'users': ApplicationUsersTableConfig(),
+        'attributed_checkouts': ApplicationUsersTableConfig(),
+        'attribute_checkouts': ApplicationAttributedCheckoutsTableConfig(),
+    }
+
+    return template_env.get_template(f"{type}/{entity}.sql").render(
+        asdict(config_map.get(entity))
+    )
 
 
-def run_checkout_attribution_job() -> None:
-    _, t_env = get_execution_environment(StreamJobConfig())
-
+def run_checkout_attribution_job(
+    t_env: StreamTableEnvironment,
+    get_sql_query=get_sql_query,
+) -> None:
     # Create Source DDLs
-    t_env.execute_sql(get_ddl('clicks'))
-    t_env.execute_sql(get_ddl('checkouts'))
-    t_env.execute_sql(get_ddl('users'))
+    t_env.execute_sql(get_sql_query('clicks'))
+    t_env.execute_sql(get_sql_query('checkouts'))
+    t_env.execute_sql(get_sql_query('users'))
 
     # Create Sink DDL
-    t_env.execute_sql(get_ddl('attributed_checkouts', 'sink'))
+    t_env.execute_sql(get_sql_query('attributed_checkouts', 'sink'))
 
-    # Use processing query
+    # Run processing query
     stmt_set = t_env.create_statement_set()
-    stmt_set.add_insert_sql(get_ddl('attribute_checkouts', 'process'))
+    stmt_set.add_insert_sql(get_sql_query('attribute_checkouts', 'process'))
 
     checkout_attribution_job = stmt_set.execute()
     print(
@@ -76,4 +129,5 @@ def run_checkout_attribution_job() -> None:
 
 
 if __name__ == '__main__':
-    run_checkout_attribution_job()
+    _, t_env = get_execution_environment(StreamJobConfig())
+    run_checkout_attribution_job(t_env)

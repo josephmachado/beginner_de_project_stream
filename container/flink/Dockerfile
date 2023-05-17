@@ -11,5 +11,7 @@ RUN wget https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-connect
 RUN echo "metrics.reporters: prom" >> "$FLINK_HOME/conf/flink-conf.yaml"; \
     echo "metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory" >> "$FLINK_HOME/conf/flink-conf.yaml"
 
-# install PyFlink
-RUN pip3 install apache-flink==1.17.0
+COPY requirements.txt /opt/flink/
+
+# Install py dependencies
+RUN pip install --no-cache-dir -r /opt/flink/requirements.txt

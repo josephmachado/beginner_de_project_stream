@@ -20,7 +20,7 @@ isort:
 	docker exec datagen isort .
 
 type:
-	docker exec datagen mypy --ignore-missing-imports /opt
+	docker exec datagen mypy --ignore-missing-imports --no-implicit-optional /opt
 
 lint: 
 	docker exec datagen flake8 /opt
@@ -37,3 +37,6 @@ run: down up sleep ci run-checkout-attribution-job
 
 viz: 
 	open http://localhost:3000
+
+ui:
+	open http://localhost:8081/

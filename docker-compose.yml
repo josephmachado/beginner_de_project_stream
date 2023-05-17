@@ -4,8 +4,7 @@ services:
   jobmanager:
     container_name: jobmanager
     build:
-      context: .
-      dockerfile: ./container/flink/Dockerfile
+      context: ./container/flink/
     ports:
       - "8081:8081"
       - "9249:9249"
@@ -20,8 +19,7 @@ services:
   taskmanager:
     container_name: taskmanager
     build:
-      context: .
-      dockerfile: ./container/flink/Dockerfile
+      context: ./container/flink/
     depends_on:
       - jobmanager
     command: taskmanager

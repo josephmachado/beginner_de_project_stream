@@ -11,10 +11,10 @@ CREATE TABLE clicks (
     processing_time AS PROCTIME(),
     WATERMARK FOR datetime_occured AS datetime_occured - INTERVAL '15' SECOND
 ) WITH (
-    'connector' = 'kafka',
-    'topic' = 'clicks',
-    'properties.bootstrap.servers' = 'kafka:9092',
-    'properties.group.id' = 'flink-consumer-group-1',
-    'scan.startup.mode' = 'earliest-offset',
-    'format' = 'json'
+    'connector' = '{{ connector }}',
+    'topic' = '{{ topic }}',
+    'properties.bootstrap.servers' = '{{ bootstrap_servers }}',
+    'properties.group.id' = '{{ consumer_group_id }}',
+    'scan.startup.mode' = '{{ scan_stratup_mode }}',
+    'format' = '{{ format }}'
 );
