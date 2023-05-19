@@ -5,6 +5,7 @@ from jinja2 import Environment, FileSystemLoader
 from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.table import StreamTableEnvironment
 
+# dependency jars to read data from kafka, and connect to postgres
 REQUIRED_JARS = [
     "file:///opt/flink/flink-sql-connector-kafka-1.17.0.jar",
     "file:///opt/flink/flink-connector-jdbc-3.0.0-1.16.jar",

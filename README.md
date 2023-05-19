@@ -13,8 +13,7 @@ Our objectives are:
  2. Log the checkouts and their corresponding attributed clicks (if any).
  3. Enrich checkout data with user information. The user data is in a transactional database.
 
-`ADD ARCH IMAGE`
-
+![Architecture](assets/images/arch.png)
 
 ## Setup
 
