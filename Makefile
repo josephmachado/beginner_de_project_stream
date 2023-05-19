@@ -30,6 +30,9 @@ ci: isort format type lint
 ####################################################################################################################
 # Run ETL
 
+pyflink: 
+	docker exec -ti jobmanager ./bin/pyflink-shell.sh local
+
 run: down up sleep ci run-checkout-attribution-job
 
 ####################################################################################################################
