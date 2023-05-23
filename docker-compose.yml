@@ -1,66 +1,102 @@
-version: "2.1"
+version: "2.2"
 services:
+
   jobmanager:
-    image: flink:1.11.0-scala_2.11
-    command: "jobmanager.sh start-foreground"
+    container_name: jobmanager
+    build:
+      context: ./container/flink/
     ports:
-      - 8081:8081
+      - "8081:8081"
+      - "9249:9249"
+    command: jobmanager
     volumes:
-      - ./conf:/opt/flink/conf
-      - flink-checkpoints-directory:/tmp/flink-checkpoints-directory
-      - /tmp/flink-savepoints-directory:/tmp/flink-savepoints-directory
+      - ./code:/opt/flink/code
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager        
+
   taskmanager:
-    image: flink:1.11.0-scala_2.11
+    container_name: taskmanager
+    build:
+      context: ./container/flink/
     depends_on:
       - jobmanager
-    command: "taskmanager.sh start-foreground"
-    volumes:
-      - ./conf:/opt/flink/conf
-      - flink-checkpoints-directory:/tmp/flink-checkpoints-directory
-      - /tmp/flink-savepoints-directory:/tmp/flink-savepoints-directory
-    environment:
-      - JOB_MANAGER_RPC_ADDRESS=jobmanager
-  zookeeper:
-    image: wurstmeister/zookeeper:3.4.6
-  kafka:
-    image: wurstmeister/kafka:2.12-2.2.1
-    environment:
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_CREATE_TOPICS: "server-logs, alerts"
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    command: taskmanager
     ports:
-      - 9094:9094
+      - "9250:9249"
+    volumes:
+      - ./code:/opt/flink/code
+    scale: 1
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 2        
+
+  prometheus:
+    image: prom/prometheus:v2.37.1
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:8.4.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=flink
+    volumes:
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:3.8
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  kafka:
+    image: docker.io/bitnami/kafka:3.4
+    container_name: kafka
+    ports:
+      - "9093:9093"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=INSIDE://:9092,OUTSIDE://:9093
+      - KAFKA_CFG_LISTENERS=INSIDE://:9092,OUTSIDE://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=INSIDE
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+
   postgres:
-    image: postgres:12.2
+    image: debezium/postgres:15
+    container_name: postgres
+    hostname: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=postgres
     ports:
       - "5432:5432"
-    environment:
-      POSTGRES_DB: "events"
-      POSTGRES_USER: "startdataengineer"
-      POSTGRES_PASSWORD: "password"
     volumes:
-      - ./dbsetup:/docker-entrypoint-initdb.d
-  serverloggenerator:
-    build: ./
-    image: sde:1-FLINK-1.11-scala_2.11
-    command: "java -classpath /opt/frauddetection.jar:/opt/flink/lib/* com.startdataengineering.ServerLogGenerator"
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  datagen:
+    build:
+      context: ./container/datagen/
+    command: python /opt/datagen/gen_fake_data.py
+    volumes:
+      - ./code:/opt/datagen/code
+      - ./datagen:/opt/datagen
+    container_name: datagen
+    restart: on-failure
     depends_on:
-      - kafka
-  frauddetection:
-    image: sde:1-FLINK-1.11-scala_2.11
-    command: "flink run -d -p 2 /opt/frauddetection.jar"
-    depends_on:
-      - jobmanager
-      - kafka
       - postgres
-    volumes:
-      - ./conf:/opt/flink/conf
-    environment:
-      - JOB_MANAGER_RPC_ADDRESS=jobmanager
-volumes:
-  flink-checkpoints-directory:
+      - kafka
