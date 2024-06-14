@@ -1,3 +1,4 @@
+
 # Beginner Data Engineering Project - Stream Version
 
 Code for blog at [Data Engineering Project Stream Edition](https://www.startdataengineering.com/post/data-engineering-project-for-beginners-stream-edition/).
@@ -10,6 +11,21 @@ Our objectives are:
  1. Enrich checkout data with the user name. The user data is in a transactional database.
  2. Identify which click leads to a checkout (aka attribution). For every product checkout, we consider **the earliest click a user made on that product in the previous hour to be the click that led to a checkout**.
  3. Log the checkouts and their corresponding attributed clicks (if any) into a table.
+
+## Run on codespaces
+
+You can run this data pipeline using GitHub codespaces. Follow the instructions below.
+
+1. Create codespaces by going to the **[beginner_de_project_stream](https://github.com/josephmachado/beginner_de_project_stream)** repository, cloning(or fork) it and then clicking on `Create codespaces on main` button.
+2. Wait for codespaces to start, then in the terminal type `make run`.
+3. Wait for `make run` to complete.
+4. Go to the `ports` tab and click on the link exposing port `8081` to access Flink UI and clicking on `Jobs -> Running Jobs -> checkout-attribution-job` to see our running job..
+
+![codespace start](./assets/images/cs1.png)
+![codespace make up](./assets/images/cs2.png)
+![codespace access ui](./assets/images/cs3.png)
+
+**Note** Make sure to switch off codespaces instance, you only have limited free usage; see docs [here](https://github.com/features/codespaces#pricing).
 
 ## Prerequisites
 
@@ -32,7 +48,7 @@ Our streaming pipeline architecture is as follows (from left to right):
    2. The click data is stored in our cluster state. Note that we only store click information for the last hour, and we only store one click per user-product combination. 
    3. The checkout data is enriched with user information by querying the user table in Postgres.
    4. The checkout data is left joined with the click data( in the cluster state) to see if the checkout can be attributed to a click.
-   5. The enriched and attributed checkout data is logged into a Postgres sink table.
+5. The enriched and attributed checkout data is logged into a Postgres sink table.
 4. **`Monitoring & Alerting`**: Apache Flink metrics are pulled by Prometheus and visualized using Graphana.
 
 ![Architecture](./assets/images/arch.png)
