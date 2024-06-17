@@ -1,4 +1,17 @@
 
+* [Beginner Data Engineering Project - Stream Version](#beginner-data-engineering-project---stream-version)
+   * [Project](#project)
+   * [Run on codespaces](#run-on-codespaces)
+   * [Run locally](#run-locally)
+      * [Prerequisites](#prerequisites)
+   * [Architecture](#architecture)
+   * [Code design](#code-design)
+   * [Run streaming job](#run-streaming-job)
+   * [Check output](#check-output)
+   * [Tear down](#tear-down)
+   * [Contributing](#contributing)
+   * [References](#references)
+
 # Beginner Data Engineering Project - Stream Version
 
 Code for blog at [Data Engineering Project Stream Edition](https://www.startdataengineering.com/post/data-engineering-project-for-beginners-stream-edition/).
@@ -27,7 +40,9 @@ You can run this data pipeline using GitHub codespaces. Follow the instructions 
 
 **Note** Make sure to switch off codespaces instance, you only have limited free usage; see docs [here](https://github.com/features/codespaces#pricing).
 
-## Prerequisites
+## Run locally
+
+### Prerequisites
 
 To run the code, you'll need the following:
 
